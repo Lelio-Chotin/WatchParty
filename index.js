@@ -1,54 +1,55 @@
 const express = require("express");
-const app = express();
-const http = require("http").createServer(app);
+const http = require("http");
 const { Server } = require("socket.io");
 
-const io = new Server(http, {
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
     cors: { origin: "*" }
 });
 
-// ✅ ROUTE JOIN
+// ================= JOIN LINK =================
 app.get("/join/:roomId", (req, res) => {
-    const roomId = req.params.roomId;
+    const { roomId } = req.params;
 
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>WatchParty Join</title>
-        </head>
-        <body>
-            <script>
-                localStorage.setItem("watchparty-room", "${roomId}");
-                window.location.href = "https://www.youtube.com";
-            </script>
-        </body>
-        </html>
-    `);
+    // Redirection vers YouTube avec la room stockée
+    res.redirect(
+        `https://www.youtube.com/watch?v=dQw4w9WgXcQ#room=${roomId}`
+    );
 });
 
-// ⚡ SOCKET LOGIC
-io.on("connection", (socket) => {
+// ================= SOCKET.IO =================
+io.on("connection", socket => {
+
     socket.on("join-room", ({ roomId, username }) => {
         socket.join(roomId);
-        io.to(roomId).emit("chat-message", {
-            username: "System",
-            message: username + " a rejoint la room"
-        });
+        socket.roomId = roomId;
+        socket.username = username;
+        console.log(`✅ ${username} joined ${roomId}`);
     });
 
-    socket.on("chat-message", ({ roomId, message }) => {
-        io.to(roomId).emit("chat-message", {
-            username: socket.id.slice(0, 4),
-            message
-        });
-    });
-
-    socket.on("video-event", (data) => {
+    socket.on("video-event", data => {
         socket.to(data.roomId).emit("video-event", data);
     });
+
+    socket.on("video-change", data => {
+        socket.to(data.roomId).emit("video-change", data);
+    });
+
+    socket.on("chat-message", data => {
+        socket.to(data.roomId).emit("chat-message", {
+            username: socket.username,
+            message: data.message
+        });
+    });
+
+    socket.on("disconnect", () => {
+        console.log("❌ user disconnected");
+    });
 });
 
-http.listen(process.env.PORT || 3000, () => {
-    console.log("Server running");
-});
+// ================= START =================
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () =>
+    console.log("✅ WatchParty server running on", PORT)
+);
