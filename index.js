@@ -6,20 +6,13 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+  cors: { origin: "*" }
 });
 
 io.on("connection", (socket) => {
-  console.log("✅ Connected:", socket.id);
-
   socket.on("join-room", ({ roomId, username }) => {
     socket.join(roomId);
     socket.username = username;
-
-    console.log(`📦 ${username} joined ${roomId}`);
   });
 
   socket.on("chat-message", ({ roomId, message }) => {
@@ -29,12 +22,12 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("disconnect", () => {
-    console.log("❌ Disconnected:", socket.username || socket.id);
+  socket.on("video-event", ({ roomId, type, time }) => {
+    socket.to(roomId).emit("video-event", {
+      type,
+      time
+    });
   });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log("🚀 Server running on port", PORT);
-});
+server.listen(process.env.PORT || 3000);
