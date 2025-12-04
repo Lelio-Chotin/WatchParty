@@ -21,7 +21,6 @@ app.get("/join/:roomId", (req, res) => {
             <p>Joining WatchParty…</p>
 
             <script>
-              // Redirection vers YouTube avec la room dans le hash
               window.location.href = `https://www.youtube.com/watch?v=${videoId}&room=${roomId}`;
             </script>
           </body>
@@ -65,6 +64,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () =>
     console.log("WatchParty server running on", PORT)
 );
+
 
 
 
