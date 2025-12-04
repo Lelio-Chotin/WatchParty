@@ -50,11 +50,12 @@ io.on("connection", socket => {
     });
 
     socket.on("chat-message", data => {
-        socket.to(data.roomId).emit("chat-message", {
+        io.to(data.roomId).emit("chat-message", {
             username: socket.username,
             message: data.message
         });
     });
+
 
     socket.on("disconnect", () => {
         console.log("❌ user disconnected");
@@ -66,6 +67,7 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () =>
     console.log("WatchParty server running on", PORT)
 );
+
 
 
 
