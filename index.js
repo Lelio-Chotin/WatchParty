@@ -8,7 +8,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// In-memory rooms: { roomId: { clients: Set(ws), state: { time, paused, rate } } }
 const rooms = {};
 
 app.post('/room', (req, res) => {
@@ -47,7 +46,6 @@ wss.on('connection', (ws, req) => {
       if (!rooms[roomId]) rooms[roomId] = { clients: new Set(), state: null };
       ws.roomId = roomId;
       rooms[roomId].clients.add(ws);
-      // send current state to new client
       if (rooms[roomId].state) {
         ws.send(JSON.stringify({ type: 'stateResponse', roomId, payload: rooms[roomId].state }));
       }
@@ -63,12 +61,9 @@ wss.on('connection', (ws, req) => {
     }
 
     else if (type === 'sync') {
-      // update server-side state
       if (!rooms[roomId]) rooms[roomId] = { clients: new Set(), state: null };
       const s = rooms[roomId].state || {};
-      // merge: payload may have { action, time, paused, rate }
       rooms[roomId].state = Object.assign(s, payload);
-      // broadcast to others
       broadcastToRoom(roomId, { type: 'sync', roomId, payload }, ws);
     }
 
@@ -93,10 +88,7 @@ wss.on('connection', (ws, req) => {
     if (r && rooms[r]) {
       rooms[r].clients.delete(ws);
       broadcastToRoom(r, { type: 'presence', roomId: r, payload: { clients: rooms[r].clients.size } });
-      // optional: delete room if empty
       if (rooms[r].clients.size === 0) {
-        // keep for a short time OR remove immediately:
-        // delete rooms[r];
       }
     }
   });
@@ -104,7 +96,6 @@ wss.on('connection', (ws, req) => {
 
 const PORT = process.env.PORT || 3000;
 
-// KEEPALIVE
 setInterval(() => {
   if (rooms) {
     const count = Object.keys(rooms).length;
