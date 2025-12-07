@@ -103,4 +103,17 @@ wss.on('connection', (ws, req) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+// KEEPALIVE
+setInterval(() => {
+  if (rooms) {
+    const count = Object.keys(rooms).length;
+    console.log("KeepAlive : rooms =", count);
+  }
+}, 25000);
+
+app.get('/health', (req, res) => {
+  res.json({ ok: true, rooms: Object.keys(rooms).length });
+});
+
 server.listen(PORT, () => console.log('Server listening on', PORT));
